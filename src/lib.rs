@@ -35,4 +35,4 @@ pub mod tracing_result;
 
 pub use boxerror_replacement::{DynError, DynResult};
 pub use error_reporter::Report;
-pub use tracing_result::{Result, Err, Traced, TracedMarker};
+pub use tracing_result::{Result, Err, Traced};

@@ -8,7 +8,7 @@
 //! #![feature(min_specialization)]
 //!
 //! use std::panic::Location;
-//! use trial_and_error::{Result, Err, Traced, TracedMarker};
+//! use trial_and_error::{Result, Err, Traced};
 //! 
 //! // Make Strings traceable. Here we'll simply append a '!' for every propagation. In a more
 //! // realistic use-case, we'd almost certainly want to make use of the `location` parameter.
@@ -26,8 +26,6 @@
 //!     }
 //! }
 //!
-//! impl TracedMarker for NewString {}
-//!
 //! fn baz() -> Result<(), NewString> {
 //!     Err("Error".to_string())?
 //! }
@@ -42,14 +40,12 @@ use std::panic::Location;
 
 /// Trait intended to allow users to configure tracing behavior 
 /// on the implementing type.
+#[rustc_specialization_trait]
 pub trait Traced {
     /// Use the `trace` function to configure tracing behavior 
     /// of the implementing type.
     fn trace(&mut self, location: &'static Location<'static>);
 }
-
-#[rustc_specialization_trait]
-pub trait TracedMarker: Traced {}
 
 /// Dummy Result that implements `Traced`.
 pub enum Result<T, E> {
@@ -94,7 +90,7 @@ where
 // Specialized FromResidual impl for types that implement `Traced`
 impl<T, E, F> FromResidual<Result<!, E>> for Result<T, F>
 where 
-    F: From<E> + TracedMarker,
+    F: From<E> + Traced,
 {
     #[track_caller]
     fn from_residual(residual: Result<!, E>) -> Self {
