@@ -14,6 +14,8 @@
 #![feature(exhaustive_patterns)]
 #![feature(backtrace)]
 #![feature(error_iter)]
+#![feature(min_specialization)]
+#![feature(rustc_attrs)]
 
 #![warn(
     missing_docs,
@@ -29,6 +31,8 @@
 
 pub mod boxerror_replacement;
 pub mod error_reporter;
+pub mod tracing_result;
 
 pub use boxerror_replacement::{DynError, DynResult};
 pub use error_reporter::Report;
+pub use tracing_result::{Result, Err, Traced, TracedMarker};
