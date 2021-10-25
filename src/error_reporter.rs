@@ -466,9 +466,10 @@ Caused by:
     }
 
     #[test]
-    #[ignore]
     fn error_with_backtrace_outputs_correctly() {
         use std::backtrace::Backtrace;
+
+        std::env::remove_var("RUST_BACKTRACE");
 
         #[derive(Debug)]
         struct ErrorWithBacktrace<'a> {
