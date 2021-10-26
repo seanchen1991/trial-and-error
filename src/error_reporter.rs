@@ -123,10 +123,7 @@
 //! }
 //! ```
 
-use std::{
-    error::Error,
-    fmt::{self, Write},
-};
+use std::{error::Error, fmt};
 
 /// The main `Report` type.
 pub struct Report<E> {
@@ -190,15 +187,11 @@ where
             for (ind, error) in cause.chain().enumerate() {
                 writeln!(f)?;
 
-                let format = if multiple { Some(ind) } else { None };
-
-                let mut indented = Indented {
-                    buffer: f,
-                    needs_indent: true,
-                    format,
-                };
-
-                write!(indented, "{}", error)?;
+                if multiple {
+                    write!(f, "{:>4}: {}", ind, Indented { source: error })?;
+                } else {
+                    write!(f, "    {}", error)?;
+                }
             }
         }
 
@@ -250,58 +243,23 @@ where
     }
 }
 
-/// Encapsulates how error sources are indented and formatted.
-struct Indented<'a, D: ?Sized> {
-    /// The write buffer that is written to.
-    buffer: &'a mut D,
-    /// Whether the output needs to be indented or not.
-    needs_indent: bool,
-    /// Details regarding how the output should be formatted.
-    /// `Some(usize)` indicates that the output should be numbered due to the error chain having
-    /// multiple causes.
-    /// `None` indicates that the error chain has at most one cause, and can thus be formatted in a
-    /// more uniform manner.
-    format: Option<usize>,
+struct Indented<D> {
+    source: D,
 }
 
-impl<D> Write for Indented<'_, D>
+impl<D> fmt::Display for Indented<D>
 where
-    D: Write + ?Sized,
+    D: fmt::Display,
 {
-    fn write_str(&mut self, s: &str) -> fmt::Result {
-        // let lines: Vec<&str> = s.lines().collect();
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let source = self.source.to_string();
 
-        // println!("lines: {:?}", lines);
-
-        for (ind, line) in s.lines().filter(|s| !s.is_empty()).enumerate() {
-            // for (ind, line) in s.lines().enumerate() {
-            println!("write_str: {}, {}", ind, line);
-
+        for (ind, line) in source.trim().lines().filter(|l| !l.is_empty()).enumerate() {
             if ind > 0 {
-                self.buffer.write_char('\n')?;
-                self.needs_indent = true;
+                write!(f, "\n      {}", line)?;
+            } else {
+                write!(f, "{}", line)?;
             }
-
-            if self.needs_indent {
-                if line.is_empty() {
-                    continue;
-                }
-
-                match self.format {
-                    Some(line_number) => {
-                        if ind == 0 {
-                            write!(self.buffer, "{: >4}: ", line_number)?;
-                        } else {
-                            write!(self.buffer, "      ")?;
-                        }
-                    }
-                    None => write!(self.buffer, "    ")?,
-                }
-
-                self.needs_indent = false;
-            }
-
-            self.buffer.write_str(line)?;
         }
 
         Ok(())
