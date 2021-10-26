@@ -255,7 +255,12 @@ where
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let source = self.source.to_string();
 
-        for (ind, line) in source.trim().lines().filter(|l| !l.is_empty()).enumerate() {
+        for (ind, line) in source
+            .trim()
+            .split('\n')
+            .filter(|l| !l.is_empty())
+            .enumerate()
+        {
             if ind > 0 {
                 write!(f, "\n      {}", line)?;
             } else {
