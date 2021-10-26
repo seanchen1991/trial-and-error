@@ -243,6 +243,7 @@ where
     }
 }
 
+/// Wrapper type for indenting the inner source.
 struct Indented<D> {
     source: D,
 }
