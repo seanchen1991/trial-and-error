@@ -274,6 +274,8 @@ mod tests {
     use std::error::Error;
     use std::fmt;
 
+    use pretty_assertions::assert_eq;
+
     #[derive(Debug)]
     struct GenericError<D> {
         message: D,
@@ -429,7 +431,7 @@ line 5
 line 6"#;
 
         let actual = report.to_string();
-        pretty_assertions::assert_eq!(expected, actual);
+        assert_eq!(expected, actual);
     }
 
     #[test]
@@ -479,7 +481,7 @@ Caused by:
       line 6"#;
 
         let actual = report.to_string();
-        pretty_assertions::assert_eq!(expected, actual);
+        assert_eq!(expected, actual);
     }
 
     #[test]
@@ -522,7 +524,7 @@ Caused by:
     }
 
     #[test]
-    fn errors_that_start_with_newline_format_correctly() {
+    fn errors_that_start_with_newline_formats_correctly() {
         #[derive(Debug)]
         struct MyMessage;
 
@@ -546,6 +548,6 @@ Caused by:
    1: The message"#;
 
         let actual = report.to_string();
-        pretty_assertions::assert_eq!(expected, actual);
+        assert_eq!(expected, actual);
     }
 }
