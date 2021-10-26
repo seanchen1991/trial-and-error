@@ -273,9 +273,9 @@ where
 
         // println!("lines: {:?}", lines);
 
-        // for (ind, line) in s.lines().filter(|s| !s.is_empty()).enumerate() {
-        for (ind, line) in s.lines().enumerate() {
-            // println!("write_str: {}, {}", ind, line);
+        for (ind, line) in s.lines().filter(|s| !s.is_empty()).enumerate() {
+            // for (ind, line) in s.lines().enumerate() {
+            println!("write_str: {}, {}", ind, line);
 
             if ind > 0 {
                 self.buffer.write_char('\n')?;
@@ -290,7 +290,7 @@ where
                 match self.format {
                     Some(line_number) => {
                         if ind == 0 {
-                            write!(self.buffer, "{:>4}: ", line_number)?;
+                            write!(self.buffer, "{: >4}: ", line_number)?;
                         } else {
                             write!(self.buffer, "      ")?;
                         }
