@@ -191,6 +191,7 @@ where
                 writeln!(f)?;
 
                 let format = if multiple { Some(ind) } else { None };
+
                 let mut indented = Indented {
                     buffer: f,
                     needs_indent: true,
@@ -268,7 +269,14 @@ where
     D: Write + ?Sized,
 {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        for (ind, line) in s.split('\n').enumerate() {
+        // let lines: Vec<&str> = s.lines().collect();
+
+        // println!("lines: {:?}", lines);
+
+        // for (ind, line) in s.lines().filter(|s| !s.is_empty()).enumerate() {
+        for (ind, line) in s.lines().enumerate() {
+            // println!("write_str: {}, {}", ind, line);
+
             if ind > 0 {
                 self.buffer.write_char('\n')?;
                 self.needs_indent = true;
@@ -280,9 +288,9 @@ where
                 }
 
                 match self.format {
-                    Some(size) => {
+                    Some(line_number) => {
                         if ind == 0 {
-                            write!(self.buffer, "{: >4}: ", size)?;
+                            write!(self.buffer, "{:>4}: ", line_number)?;
                         } else {
                             write!(self.buffer, "      ")?;
                         }
@@ -383,9 +391,10 @@ mod tests {
             side: SuperErrorSideKick,
         };
         let report = Report::new(&error);
+        let actual = report.to_string();
         let expected = String::from("SuperError is here!: SuperErrorSideKick is here!");
 
-        assert_eq!(expected, report.to_string(),);
+        assert_eq!(expected, actual);
     }
 
     #[test]
@@ -394,32 +403,81 @@ mod tests {
             side: SuperErrorSideKick,
         };
         let report = Report::new(&error).pretty(true);
+        let actual = report.to_string();
         let expected =
             String::from("SuperError is here!\n\nCaused by:\n    SuperErrorSideKick is here!");
 
-        assert_eq!(expected, report.to_string(),);
+        assert_eq!(expected, actual);
     }
 
     #[test]
     fn error_with_no_sources_formats_single_line_correctly() {
         let report = Report::new(SuperErrorSideKick);
+        let actual = report.to_string();
         let expected = String::from("SuperErrorSideKick is here!");
 
-        assert_eq!(expected, report.to_string());
+        assert_eq!(expected, actual);
     }
 
     #[test]
     fn error_with_no_sources_formats_multi_line_correctly() {
         let report = Report::new(SuperErrorSideKick).pretty(true);
+        let actual = report.to_string();
         let expected = String::from("SuperErrorSideKick is here!");
 
-        assert_eq!(expected, report.to_string());
+        assert_eq!(expected, actual);
     }
 
     #[test]
-    fn error_formats_with_rude_display_impl() {
+    fn error_formats_single_line_with_rude_display_impl() {
         #[derive(Debug)]
         struct MyMessage;
+
+        impl std::fmt::Display for MyMessage {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.write_str("line 1\nline 2")?;
+                f.write_str("\nline 3\nline 4\n")?;
+                f.write_str("line 5\nline 6")?;
+                Ok(())
+            }
+        }
+
+        let error = GenericError::new(MyMessage);
+        let error = GenericError::new_with_source(MyMessage, error);
+        let error = GenericError::new_with_source(MyMessage, error);
+        let error = GenericError::new_with_source(MyMessage, error);
+        let report = Report::new(error);
+        let expected = r#"line 1
+line 2
+line 3
+line 4
+line 5
+line 6: line 1
+line 2
+line 3
+line 4
+line 5
+line 6: line 1
+line 2
+line 3
+line 4
+line 5
+line 6: line 1
+line 2
+line 3
+line 4
+line 5
+line 6"#;
+
+        let actual = report.to_string();
+        pretty_assertions::assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn error_formats_multi_line_with_rude_display_impl() {
+        #[derive(Debug)]
+        struct MyMessage;
+
         impl std::fmt::Display for MyMessage {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 f.write_str("line 1\nline 2")?;
@@ -505,5 +563,30 @@ Caused by:
     }
 
     #[test]
-    fn multiple_error_sources() {}
+    fn errors_that_start_with_newline_format_correctly() {
+        #[derive(Debug)]
+        struct MyMessage;
+
+        impl fmt::Display for MyMessage {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                f.write_str("\nThe message\n")?;
+                Ok(())
+            }
+        }
+
+        let error = GenericError::new(MyMessage);
+        let error = GenericError::new_with_source(MyMessage, error);
+        let error = GenericError::new_with_source(MyMessage, error);
+        let report = Report::new(error).pretty(true);
+        let expected = r#"
+The message
+
+
+Caused by:
+   0: The message
+   1: The message"#;
+
+        let actual = report.to_string();
+        pretty_assertions::assert_eq!(expected, actual);
+    }
 }
