@@ -562,15 +562,18 @@ Caused by:
 
         impl fmt::Display for MyMessage {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                write!(f, "Got an error code: ({})", self.0)?;
+                write!(f, "Got an error code: ({}). ", self.0)?;
                 write!(f, "What would you like to do in response?")
             }
         }
 
-        let error = GenericError::new(MyMessage);
-        let error = GenericError::new_with_source(MyMessage, error);
-        let report = Report::new(error);
-        let expected = "";
+        let error = GenericError::new(MyMessage(10));
+        let error = GenericError::new_with_source(MyMessage(20), error);
+        let report = Report::new(error).pretty(true);
+        let expected = r#"Got an error code: (20). What would you like to do in response?
+
+Caused by:
+    Got an error code: (10). What would you like to do in response?"#;
         let actual = report.to_string();
         assert_eq!(expected, actual);
     }
