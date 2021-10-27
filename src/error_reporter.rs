@@ -535,8 +535,7 @@ Caused by:
 
         impl fmt::Display for MyMessage {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                f.write_str("\nThe message\n")?;
-                Ok(())
+                f.write_str("\nThe message\n")
             }
         }
 
@@ -552,6 +551,26 @@ Caused by:
    0: The message
    1: The message"#;
 
+        let actual = report.to_string();
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn errors_with_string_interpolation_formats_correctly() {
+        #[derive(Debug)]
+        struct MyMessage(usize);
+
+        impl fmt::Display for MyMessage {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                write!(f, "Got an error code: ({})", self.0)?;
+                write!(f, "What would you like to do in response?")
+            }
+        }
+
+        let error = GenericError::new(MyMessage);
+        let error = GenericError::new_with_source(MyMessage, error);
+        let report = Report::new(error);
+        let expected = "";
         let actual = report.to_string();
         assert_eq!(expected, actual);
     }
